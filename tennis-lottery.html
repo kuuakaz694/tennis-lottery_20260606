@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="テニスくじ">
+  <meta name="theme-color" content="#2d7a3f">
+  <title>プログレス テニス順番くじ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; }
+    body { background: #1a3a24; overscroll-behavior: none; }
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ========== TOP SCREEN ========== */
+    #screen-top {
+      background: #2d7a3f;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .court-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .top-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      width: 100%;
+    }
+    .tennis-ball {
+      display: inline-block;
+      width: 44px; height: 44px;
+      background: radial-gradient(circle at 35% 35%, #d4f000, #a8c000);
+      border-radius: 50%;
+      box-shadow: inset -3px -3px 6px rgba(0,0,0,0.2);
+      margin-bottom: 16px;
+    }
+    .top-title-main {
+      font-size: clamp(28px, 8vw, 40px);
+      font-weight: 900;
+      color: white;
+      line-height: 1.3;
+      text-shadow: 0 3px 12px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.6);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .top-title-sub {
+      font-size: clamp(22px, 6vw, 32px);
+      font-weight: 900;
+      color: #d4f000;
+      line-height: 1.3;
+      text-shadow: 0 3px 12px rgba(0,0,0,0.5);
+      letter-spacing: 0.03em;
+      margin-bottom: 52px;
+    }
+    .top-buttons { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 290px; margin: 0 auto; }
+    .btn-member {
+      background: rgba(255,255,255,0.95);
+      color: #1a5a28;
+      border: none;
+      border-radius: 16px;
+      padding: 17px 32px;
+      font-size: 18px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      letter-spacing: 0.08em;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-member:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .btn-start {
+      background: linear-gradient(135deg, #d4f000, #a8c000);
+      color: #1a4a10;
+      border: none;
+      border-radius: 16px;
+      padding: 17px 32px;
+      font-size: 18px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      letter-spacing: 0.08em;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-start:active { transform: scale(0.97); }
+    .top-credit { margin-top: 32px; color: rgba(255,255,255,0.5); font-size: 13px; letter-spacing: 0.1em; }
+
+    /* ========== HEADER (shared) ========== */
+    .screen-header {
+      background: #2d7a3f;
+      padding: 20px 16px 16px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+    .screen-header h2 { color: white; font-size: 20px; font-weight: 900; letter-spacing: 0.06em; }
+    .screen-header p { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 4px; }
+
+    /* ========== MEMBER SCREEN ========== */
+    #screen-member { background: #1a3a24; }
+    .member-input-row { padding: 20px 16px 12px; display: flex; gap: 8px; }
+    .member-input-row input {
+      flex: 1;
+      background: white;
+      border: none;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      color: #1a3a24;
+    }
+    .btn-ok {
+      background: #d4f000; color: #1a4a10; border: none;
+      border-radius: 12px; padding: 13px 18px; font-size: 15px;
+      font-weight: 800; font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .btn-ok:active { opacity: 0.8; }
+    .btn-del {
+      background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); border: none;
+      border-radius: 12px; padding: 13px 18px; font-size: 15px;
+      font-weight: 800; font-family: inherit; cursor: default; white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-del.active { background: #e74c3c; color: white; cursor: pointer; }
+    .btn-del.active:active { opacity: 0.8; }
+    .select-hint { padding: 0 16px 8px; color: rgba(255,255,255,0.5); font-size: 12px; min-height: 20px; }
+    .member-list { flex: 1; padding: 4px 16px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; overflow-y: auto; }
+    .member-tag {
+      background: white; color: #1a3a24; border: 2px solid transparent;
+      border-radius: 20px; padding: 8px 16px; font-size: 15px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: all 0.15s;
+    }
+    .member-tag.selected { background: #e74c3c; color: white; border-color: #c0392b; }
+    .empty-msg { width: 100%; text-align: center; padding: 40px 0; color: rgba(255,255,255,0.3); font-size: 14px; }
+    .member-footer { padding: 12px 16px 32px; flex-shrink: 0; }
+    .btn-back {
+      width: 100%; background: rgba(255,255,255,0.1); color: white;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 12px;
+      padding: 14px; font-size: 15px; font-weight: 700; font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-back:active { background: rgba(255,255,255,0.18); }
+
+    /* ========== LOTTERY SCREEN ========== */
+    #screen-lottery { background: #1a3a24; }
+    .lottery-list { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .lottery-row {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px; padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      animation: slideIn 0.35s ease both;
+    }
+    .lottery-row.special { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .num-circle {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,0.12); color: white;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-weight: 900; font-size: 20px; font-family: inherit;
+    }
+    .num-circle.big { font-size: 16px; }
+    .num-circle.red { background: #e74c3c; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .num-circle.yellow { background: #f1c40f; color: #1a4aff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .name-pill {
+      background: white; border-radius: 10px; padding: 9px 16px;
+      flex: 1; color: #1a3a24; font-size: 17px; font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .special-icon { font-size: 20px; flex-shrink: 0; }
+    .lottery-footer {
+      padding: 12px 16px 32px; flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .legend { display: flex; gap: 16px; justify-content: center; font-size: 12px; color: rgba(255,255,255,0.5); }
+    .legend-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+    .btn-rerun {
+      background: linear-gradient(135deg, #d4f000, #a8c000); color: #1a4a10; border: none;
+      border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 800;
+      font-family: inherit; cursor: pointer; letter-spacing: 0.05em;
+    }
+    .btn-rerun:active { opacity: 0.85; }
+    .no-member-wrap {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px;
+    }
+    .no-member-wrap p { color: white; font-size: 17px; text-align: center; line-height: 1.8; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== TOP SCREEN ===== -->
+<div id="screen-top" class="screen active">
+  <svg class="court-svg" viewBox="0 0 400 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect x="40" y="60" width="320" height="580" fill="none" stroke="white" stroke-width="3"/>
+    <rect x="80" y="60" width="240" height="580" fill="none" stroke="white" stroke-width="2"/>
+    <line x1="40" y1="350" x2="360" y2="350" stroke="white" stroke-width="2"/>
+    <line x1="200" y1="130" x2="200" y2="570" stroke="white" stroke-width="2"/>
+    <line x1="80" y1="130" x2="320" y2="130" stroke="white" stroke-width="2"/>
+    <line x1="80" y1="570" x2="320" y2="570" stroke="white" stroke-width="2"/>
+    <line x1="200" y1="60" x2="200" y2="130" stroke="white" stroke-width="2"/>
+    <line x1="200" y1="570" x2="200" y2="640" stroke="white" stroke-width="2"/>
+    <circle cx="200" cy="350" r="12" fill="none" stroke="white" stroke-width="2"/>
+    <line x1="40" y1="90" x2="40" y2="110" stroke="white" stroke-width="3"/>
+    <line x1="360" y1="90" x2="360" y2="110" stroke="white" stroke-width="3"/>
+    <line x1="40" y1="590" x2="40" y2="610" stroke="white" stroke-width="3"/>
+    <line x1="360" y1="590" x2="360" y2="610" stroke="white" stroke-width="3"/>
+  </svg>
+  <div class="top-content">
+    <div class="tennis-ball"></div>
+    <div class="top-title-main">プログレス</div>
+    <div class="top-title-sub">テニス順番くじ</div>
+    <div class="top-buttons">
+      <button class="btn-member" onclick="showScreen('member')">
+        <span>👥</span> メンバー入力
+      </button>
+      <button class="btn-start" onclick="startLottery()">
+        <span>🎰</span> くじスタート
+      </button>
+    </div>
+    <p class="top-credit">PROGRESS TENNIS CLUB</p>
+  </div>
+</div>
+
+<!-- ===== MEMBER SCREEN ===== -->
+<div id="screen-member" class="screen">
+  <div class="screen-header">
+    <h2>メンバー入力</h2>
+    <p id="member-count">現在 0 名登録済み</p>
+  </div>
+  <div class="member-input-row">
+    <input type="text" id="member-input" placeholder="名前を入力..." autocomplete="off">
+    <button class="btn-ok" onclick="addMember()">OK</button>
+    <button class="btn-del" id="btn-del" onclick="deleteMember()">削除</button>
+  </div>
+  <div class="select-hint" id="select-hint"></div>
+  <div class="member-list" id="member-list">
+    <div class="empty-msg" id="empty-msg">まだメンバーがいません</div>
+  </div>
+  <div class="member-footer">
+    <button class="btn-back" onclick="showScreen('top')">← トップに戻る</button>
+  </div>
+</div>
+
+<!-- ===== LOTTERY SCREEN ===== -->
+<div id="screen-lottery" class="screen">
+  <div class="screen-header">
+    <h2>くじ結果</h2>
+    <p id="lottery-count"></p>
+  </div>
+  <div class="lottery-list" id="lottery-list"></div>
+  <div class="lottery-footer" id="lottery-footer">
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#e74c3c"></span>赤丸＝3の倍数</span>
+      <span><span class="legend-dot" style="background:#f1c40f"></span>黄丸＝6の倍数</span>
+    </div>
+    <button class="btn-rerun" onclick="runLottery()">🎰 再抽選・くじスタート</button>
+    <button class="btn-back" onclick="showScreen('top')">← スタート画面に戻る</button>
+  </div>
+</div>
+
+<script>
+  // ---- State ----
+  var members = [];
+  var selectedIndex = null;
+
+  // ---- Screen navigation ----
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById('screen-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ---- Member screen ----
+  document.getElementById('member-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') addMember();
+  });
+
+  function addMember() {
+    var input = document.getElementById('member-input');
+    var name = input.value.trim();
+    if (!name) return;
+    if (members.indexOf(name) === -1) {
+      members.push(name);
+      renderMembers();
+    }
+    input.value = '';
+    input.focus();
+  }
+
+  function deleteMember() {
+    if (selectedIndex === null) return;
+    members.splice(selectedIndex, 1);
+    selectedIndex = null;
+    renderMembers();
+  }
+
+  function selectMember(i) {
+    selectedIndex = (selectedIndex === i) ? null : i;
+    renderMembers();
+  }
+
+  function renderMembers() {
+    var list = document.getElementById('member-list');
+    var hint = document.getElementById('select-hint');
+    var delBtn = document.getElementById('btn-del');
+    document.getElementById('member-count').textContent = '現在 ' + members.length + ' 名登録済み';
+
+    list.innerHTML = '';
+    if (members.length === 0) {
+      list.innerHTML = '<div class="empty-msg">まだメンバーがいません</div>';
+      selectedIndex = null;
+    } else {
+      members.forEach(function(m, i) {
+        var btn = document.createElement('button');
+        btn.className = 'member-tag' + (selectedIndex === i ? ' selected' : '');
+        btn.textContent = m;
+        btn.onclick = function(){ selectMember(i); };
+        list.appendChild(btn);
+      });
+    }
+
+    if (selectedIndex !== null && members[selectedIndex]) {
+      hint.textContent = '「' + members[selectedIndex] + '」を選択中 → 削除ボタンで削除';
+      delBtn.className = 'btn-del active';
+    } else {
+      hint.textContent = '';
+      delBtn.className = 'btn-del';
+    }
+  }
+
+  // ---- Lottery screen ----
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function startLottery() {
+    if (members.length === 0) {
+      showScreen('lottery');
+      renderLotteryEmpty();
+      return;
+    }
+    showScreen('lottery');
+    runLottery();
+  }
+
+  function runLottery() {
+    if (members.length === 0) { renderLotteryEmpty(); return; }
+    var shuffled = shuffle(members);
+    document.getElementById('lottery-count').textContent = members.length + '名 抽選完了';
+    document.getElementById('lottery-footer').style.display = 'flex';
+
+    var list = document.getElementById('lottery-list');
+    list.innerHTML = '';
+
+    shuffled.forEach(function(name, i) {
+      var num = i + 1;
+      var isMult3 = (num % 3 === 0);
+      var isRed = isMult3 && (num % 6 !== 0);
+      var isYellow = isMult3 && (num % 6 === 0);
+
+      var row = document.createElement('div');
+      row.className = 'lottery-row' + (isMult3 ? ' special' : '');
+      row.style.animationDelay = (i * 0.05) + 's';
+
+      var circleClass = 'num-circle';
+      if (num > 9) circleClass += ' big';
+      if (isRed) circleClass += ' red';
+      else if (isYellow) circleClass += ' yellow';
+
+      var icon = '';
+      if (isRed) icon = '<span class="special-icon">🎯</span>';
+      else if (isYellow) icon = '<span class="special-icon">⭐</span>';
+
+      row.innerHTML =
+        '<div class="' + circleClass + '">' + num + '</div>' +
+        '<div class="name-pill">' + escapeHtml(name) + '</div>' +
+        icon;
+
+      list.appendChild(row);
+    });
+  }
+
+  function renderLotteryEmpty() {
+    document.getElementById('lottery-count').textContent = '';
+    document.getElementById('lottery-footer').style.display = 'none';
+    var list = document.getElementById('lottery-list');
+    list.innerHTML =
+      '<div class="no-member-wrap">' +
+        '<p>メンバーが登録されていません。<br>先にメンバーを入力してください。</p>' +
+        '<button class="btn-start" onclick="showScreen(\'top\')" style="border:none;cursor:pointer;padding:14px 28px;font-size:16px;font-weight:800;font-family:inherit;border-radius:12px;background:linear-gradient(135deg,#d4f000,#a8c000);color:#1a4a10;">← トップに戻る</button>' +
+      '</div>';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Init
+  renderMembers();
+</script>
+</body>
+</html>
